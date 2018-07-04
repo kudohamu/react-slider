@@ -336,7 +336,8 @@
         willChange: this.state.index >= 0 ? this._posMinKey() : '',
         zIndex: this.state.zIndices.indexOf(i) + 1
       };
-      style[this._posMinKey()] = offset + 'px';
+      const pos = this.state.upperBound === 0 ? 0 : offset * 100 / this.state.upperBound;
+      style[this._posMinKey()] = `${pos}%`;
       return style;
     },
 
@@ -345,8 +346,8 @@
         position: 'absolute',
         willChange: this.state.index >= 0 ? this._posMinKey() + ',' + this._posMaxKey() : ''
       };
-      obj[this._posMinKey()] = min;
-      obj[this._posMaxKey()] = max;
+      obj[this._posMinKey()] = `${min}%`;
+      obj[this._posMaxKey()] = `${100 - max}%`;
       return obj;
     },
 
@@ -394,17 +395,23 @@
     },
 
     _getMousePosition: function (e) {
+      const rect = this.slider.getBoundingClientRect();
+      const ratio = this.state.upperBound / rect[this._posMaxKey()];
+
       return [
-        e['page' + this._axisKey()],
-        e['page' + this._orthogonalAxisKey()]
+        e['page' + this._axisKey()] * ratio,
+        e['page' + this._orthogonalAxisKey()] * ratio
       ];
     },
 
     _getTouchPosition: function (e) {
+      const rect = this.slider.getBoundingClientRect();
+      const ratio = this.state.upperBound / rect[this._posMaxKey()];
+
       var touch = e.touches[0];
       return [
-        touch['page' + this._axisKey()],
-        touch['page' + this._orthogonalAxisKey()]
+        touch['page' + this._axisKey()] * ratio,
+        touch['page' + this._orthogonalAxisKey()] * ratio
       ];
     },
 
@@ -790,6 +797,10 @@
 
     _renderBar: function (i, offsetFrom, offsetTo) {
       var self = this;
+
+      const fromPer = this.state.upperBound === 0 ? 0 : offsetFrom * 100 / this.state.upperBound;
+      const toPer = this.state.upperBound === 0 ? 0 : offsetTo * 100 / this.state.upperBound;
+
       return (
         React.createElement('div', {
           key: 'bar' + i,
@@ -797,7 +808,7 @@
             self['bar' + i] = r;
           },
           className: this.props.barClassName + ' ' + this.props.barClassName + '-' + i,
-          style: this._buildBarStyle(offsetFrom, this.state.upperBound - offsetTo)
+          style: this._buildBarStyle(fromPer, toPer)
         })
       );
     },
