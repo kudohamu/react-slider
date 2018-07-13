@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -79,7 +80,9 @@
         }
 
         #horizontal-0,
-        #horizontal-1, #horizontal-2, #horizontal-3,
+        #horizontal-1,
+        #horizontal-2,
+        #horizontal-3,
         #vertical {
             margin: 20px 10px;
         }
@@ -87,78 +90,94 @@
         #horizontal-2 .bar.bar-2 {
             background: #ddd;
         }
-
     </style>
 </head>
+
 <body>
-<div id="horizontal-0"></div>
-<div id="horizontal-1"></div>
-<div id="horizontal-2"></div>
-<div id="horizontal-3"></div>
-<div id="vertical"></div>
+    <div id="horizontal-0"></div>
+    <div id="horizontal-1"></div>
+    <div id="horizontal-2"></div>
+    <div id="horizontal-3"></div>
+    <div id="vertical"></div>
 
-<script>
-    var ReactSlider = React.createFactory(ReactSlider);
+    <script>
+        var ReactSlider = React.createFactory(ReactSlider);
 
-    function map(v, f, context) {
-        return (v && v.map) ? v.map(f, context) : f.call(context, v, 0);
-    }
+        function map(v, f, context) {
+            return (v && v.map) ? v.map(f, context) : f.call(context, v, 0);
+        }
 
-    var Demo = React.createFactory(createReactClass({
-        displayName: 'Demo',
+        var Demo = React.createFactory(createReactClass({
+            displayName: 'Demo',
 
-        getInitialState: function () {
-            return {value: this.props.defaultValue}
-        },
+            getInitialState: function () {
+                return { value: this.props.defaultValue }
+            },
 
-        onChange: function (value) {
-            this.setState({value: value});
-        },
+            onChange: function (value) {
+                this.setState({ value: value });
+            },
 
-        render: function () {
-            return ReactSlider(
+            onMouseMove: function () {
+                console.log('moving');
+            },
+
+            onMouseEnter: function () {
+                console.log('entered');
+            },
+
+            onMouseLeave: function () {
+                console.log('left');
+            },
+
+            render: function () {
+                return ReactSlider(
                     Object.assign({}, this.props, {
                         className: this.props.orientation + '-slider',
                         pearling: true,
                         minDistance: 10,
                         value: this.state.value,
-                        onChange: this.onChange
+                        onChange: this.onChange,
+                        onMouseEnter: this.onMouseEnter,
+                        onMouseMove: this.onMouseMove,
+                        onMouseLeave: this.onMouseLeave
                     }, this.props),
                     map(this.state.value, function (value, i) {
-                        return React.createElement('div', {key: i}, value);
+                        return React.createElement('div', { key: i }, value);
                     })
-            );
-        }
-    }));
+                );
+            }
+        }));
 
-    ReactDOM.render(Demo({
-        defaultValue: 0,
-        orientation: 'horizontal',
-        ariaLabel: 'This is a single handle',
-    }), document.getElementById('horizontal-1'));
+        ReactDOM.render(Demo({
+            defaultValue: 0,
+            orientation: 'horizontal',
+            ariaLabel: 'This is a single handle',
+        }), document.getElementById('horizontal-1'));
 
-    ReactDOM.render(Demo({
-        defaultValue: [0, 100],
-        orientation: 'horizontal',
-        withBars: true,
-        ariaLabel: ['Lower handle', 'Upper handle'],
-        ariaValuetext: 'Some arbitrary value',
-    }), document.getElementById('horizontal-2'));
+        ReactDOM.render(Demo({
+            defaultValue: [0, 100],
+            orientation: 'horizontal',
+            withBars: true,
+            ariaLabel: ['Lower handle', 'Upper handle'],
+            ariaValuetext: 'Some arbitrary value',
+        }), document.getElementById('horizontal-2'));
 
-    ReactDOM.render(Demo({
-        defaultValue: [0, 50, 100],
-        orientation: 'horizontal',
-        withBars: true,
-        ariaLabel: ['Leftmost handle', 'Middle handle', 'Rightmost handle'],
-    }), document.getElementById('horizontal-3'));
+        ReactDOM.render(Demo({
+            defaultValue: [0, 50, 100],
+            orientation: 'horizontal',
+            withBars: true,
+            ariaLabel: ['Leftmost handle', 'Middle handle', 'Rightmost handle'],
+        }), document.getElementById('horizontal-3'));
 
-    ReactDOM.render(Demo({
-        defaultValue: [0, 50, 100],
-        orientation: 'vertical',
-        withBars: true,
-        invert: true,
-        ariaLabel: ['Lowest handle', 'Middle handle', 'Top handle'],
-    }), document.getElementById('vertical'));
-</script>
+        ReactDOM.render(Demo({
+            defaultValue: [0, 50, 100],
+            orientation: 'vertical',
+            withBars: true,
+            invert: true,
+            ariaLabel: ['Lowest handle', 'Middle handle', 'Top handle'],
+        }), document.getElementById('vertical'));
+    </script>
 </body>
+
 </html>
