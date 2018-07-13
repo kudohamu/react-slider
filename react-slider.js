@@ -172,7 +172,12 @@
        *  Callback called when the the slider is clicked (handle or bars).
        *  Receives the value at the clicked position as argument.
        */
-      onSliderClick: PropTypes.func
+      onSliderClick: PropTypes.func,
+
+      /* Customize by hiroppy */
+      onMouseMove: PropTypes.func,
+      onMouseLeave: PropTypes.func,
+      onMouseEnter: PropTypes.func
     },
 
     getDefaultProps: function () {
@@ -894,7 +899,16 @@
             style: {position: 'relative'},
             className: props.className + (props.disabled ? ' disabled' : ''),
             onMouseDown: this._onSliderMouseDown,
-            onClick: this._onSliderClick
+            onClick: this._onSliderClick,
+            onMouseMove: () => {
+              if (typeof props.onMouseMove === 'function') props.onMouseMove();
+            },
+            onMouseEnter: () => {
+              if (typeof props.onMouseEnter === 'function') props.onMouseEnter();
+            },
+            onMouseLeave: () => {
+              if (typeof props.onMouseLeave === 'function') props.onMouseLeave();
+            }
           },
           bars,
           handles
