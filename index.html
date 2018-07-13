@@ -118,8 +118,8 @@
                 this.setState({ value: value });
             },
 
-            onMouseMove: function () {
-                console.log('moving');
+            onMouseMove: function (e) {
+                console.log('moving', e.nativeEvent.offsetX);
             },
 
             onMouseEnter: function () {
