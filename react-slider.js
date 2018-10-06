@@ -545,7 +545,7 @@
       var position = this._getMousePosition(e);
       var diffPosition = this._getDiffPosition(position[0]);
       var newValue = this._getValueFromPosition(diffPosition);
-      this._move(newValue);
+      this._move(newValue, e);
     },
 
     _onTouchMove: function (e) {
@@ -569,7 +569,7 @@
       var diffPosition = this._getDiffPosition(position[0]);
       var newValue = this._getValueFromPosition(diffPosition);
 
-      this._move(newValue);
+      this._move(newValue, e);
     },
 
     _onKeyDown: function (e) {
@@ -615,7 +615,7 @@
       return diffPosition;
     },
 
-    _move: function (newValue) {
+    _move: function (newValue, e) {
       this.hasMoved = true;
 
       var props = this.props;
@@ -663,7 +663,7 @@
       // Normally you would use `shouldComponentUpdate`, but since the slider is a low-level component,
       // the extra complexity might be worth the extra performance.
       if (newValue !== oldValue) {
-        this.setState({value: value}, this._fireChangeEvent.bind(this, 'onChange'));
+        this.setState({value: value}, this._fireChangeEvent.bind(this, 'onChange', e));
       }
     },
 
@@ -852,7 +852,7 @@
         var position = this._getMousePosition(e);
         this._forceValueFromPosition(position[0], function (i) {
           this._start(i, position[0]);
-          this._fireChangeEvent('onChange');
+          this._fireChangeEvent('onChange', e);
           this._addHandlers(this._getMouseEventMap());
         }.bind(this));
       }
@@ -870,9 +870,9 @@
       }
     },
 
-    _fireChangeEvent: function (event) {
+    _fireChangeEvent: function (event, e) {
       if (this.props[event]) {
-        this.props[event](undoEnsureArray(this.state.value));
+        this.props[event](undoEnsureArray(this.state.value), e);
       }
     },
 
