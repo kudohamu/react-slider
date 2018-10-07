@@ -114,7 +114,8 @@
                 return { value: this.props.defaultValue }
             },
 
-            onChange: function (value) {
+            onChange: function (value, e) {
+                console.log('changing', e.offsetX)
                 this.setState({ value: value });
             },
 
