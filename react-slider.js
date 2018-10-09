@@ -900,13 +900,13 @@
             className: props.className + (props.disabled ? ' disabled' : ''),
             onMouseDown: this._onSliderMouseDown,
             onClick: this._onSliderClick,
-            onMouseMove: (e) => {
+            onMouseMove: function (e) {
               if (typeof props.onMouseMove === 'function') props.onMouseMove(e);
             },
-            onMouseEnter: (e) => {
+            onMouseEnter: function (e) {
               if (typeof props.onMouseEnter === 'function') props.onMouseEnter(e);
             },
-            onMouseLeave: (e) => {
+            onMouseLeave: function (e) {
               if (typeof props.onMouseLeave === 'function') props.onMouseLeave(e);
             }
           },
