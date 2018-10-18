@@ -206,9 +206,6 @@
       // reused throughout the component to store results of iterations over `value`
       this.tempArray = value.slice();
 
-      // array for storing resize timeouts ids
-      this.pendingResizeTimeouts = [];
-
       var zIndices = [];
       for (var i = 0; i < value.length; i++) {
         value[i] = this._trimAlignValue(value[i], this.props);
@@ -217,8 +214,6 @@
 
       return {
         index: -1,
-        upperBound: 0,
-        sliderLength: 0,
         value: value,
         zIndices: zIndices
       };
@@ -237,12 +232,6 @@
       }
       if (this.state.value.length > value.length)
         this.state.value.length = value.length;
-
-      // If an upperBound has not yet been determined (due to the component being hidden
-      // during the mount event, or during the last resize), then calculate it now
-      if (this.state.upperBound === 0) {
-        this._resize();
-      }
     },
 
     // Check if the arity of `value` or `defaultValue` matches the number of children (= number of custom handles).
@@ -267,56 +256,33 @@
       }
     },
 
-    componentDidMount: function () {
-      window.addEventListener('resize', this._handleResize);
-      this._resize();
-    },
-
-    componentWillUnmount: function () {
-      this._clearPendingResizeTimeouts();
-      window.removeEventListener('resize', this._handleResize);
-    },
-
     getValue: function () {
       return undoEnsureArray(this.state.value);
     },
 
-    _resize: function () {
+    _calcSliderStart: function () {
       var slider = this.slider;
-      var handle = this.handle0;
       var rect = slider.getBoundingClientRect();
-
-      var size = this._sizeKey();
-
       var sliderMax = rect[this._posMaxKey()];
       var sliderMin = rect[this._posMinKey()];
 
-      this.setState({
-        upperBound: this._calcUpperBound(),
-        sliderLength: Math.abs(sliderMax - sliderMin),
-        handleSize: handle[size],
-        sliderStart: this.props.invert ? sliderMax : sliderMin
-      });
+      return this.props.invert ? sliderMax : sliderMin;
     },
 
-    _handleResize: function () {
-      // setTimeout of 0 gives element enough time to have assumed its new size if it is being resized
-      var resizeTimeout = window.setTimeout(function() {
-        // drop this timeout from pendingResizeTimeouts to reduce memory usage
-        this.pendingResizeTimeouts.shift();
-        this._resize();
-      }.bind(this), 0);
+    _calcSliderLength: function () {
+      var slider = this.slider;
+      var rect = slider.getBoundingClientRect();
+      var sliderMax = rect[this._posMaxKey()];
+      var sliderMin = rect[this._posMinKey()];
 
-      this.pendingResizeTimeouts.push(resizeTimeout);
+      return Math.abs(sliderMax - sliderMin);
     },
 
-    // clear all pending timeouts to avoid error messages after unmounting
-    _clearPendingResizeTimeouts: function() {
-      do {
-        var nextTimeout = this.pendingResizeTimeouts.shift();
+    _calcHandleSize: function () {
+      var handle = this.handle0;
+      var size = this._sizeKey();
 
-        clearTimeout(nextTimeout);
-      } while (this.pendingResizeTimeouts.length);
+      return handle[size];
     },
 
     // calculates the offset of a handle in pixels based on its value.
@@ -326,21 +292,23 @@
         return 0;
       }
       var ratio = (value - this.props.min) / range;
-      return ratio * this.state.upperBound;
+      return ratio * this._calcUpperBound();
     },
 
     // calculates the value corresponding to a given pixel offset, i.e. the inverse of `_calcOffset`.
     _calcValue: function (offset) {
-      var ratio = offset / this.state.upperBound;
+      var ratio = offset / this._calcUpperBound();
       return ratio * (this.props.max - this.props.min) + this.props.min;
     },
 
     _calcUpperBound: function () {
+      if (!this.slider) return 0;
       var slider = this.slider;
       var handle = this.handle0;
 
       var size = this._sizeKey();
 
+      if (!slider || !handle) return 0;
       return slider[size] - handle[size];
     },
 
@@ -350,7 +318,7 @@
         willChange: this.state.index >= 0 ? this._posMinKey() : '',
         zIndex: this.state.zIndices.indexOf(i) + 1
       };
-      var pos = this.state.upperBound === 0 ? 0 : (offset * 100 / this.state.upperBound);
+      var pos = this._calcUpperBound() === 0 ? 0 : (offset * 100 / this._calcUpperBound());
       style[this._posMinKey()] = pos + '%';
       return style;
     },
@@ -385,10 +353,16 @@
     },
 
     _calcOffsetFromPosition: function (position) {
-      var pixelOffset = position - this.state.sliderStart;
-      if (this.props.invert) pixelOffset = this.state.sliderLength - pixelOffset;
-      pixelOffset -= (this.state.handleSize / 2);
+      var pixelOffset = position - this._calcSliderStart();
+      if (this.props.invert) pixelOffset = this._calcSliderLength() - pixelOffset;
+      pixelOffset -= (this._calcHandleSize() / 2);
       return pixelOffset;
+    },
+
+    _calcValueFromPosition: function (position) {
+      var pixelOffset = this._calcOffsetFromPosition(position);
+
+      return this._trimAlignValue(this._calcValue(pixelOffset));
     },
 
     // Snaps the nearest handle to the value corresponding to `position` and calls `callback` with that handle's index.
@@ -409,25 +383,17 @@
     },
 
     _getMousePosition: function (e) {
-      var rect = this.slider.getBoundingClientRect();
-      // The ratio of last resize to real size.
-      var ratio = this.state.upperBound / this._calcUpperBound();
-
       return [
-        e['page' + this._axisKey()] * ratio,
-        e['page' + this._orthogonalAxisKey()] * ratio
+        e['page' + this._axisKey()],
+        e['page' + this._orthogonalAxisKey()]
       ];
     },
 
     _getTouchPosition: function (e) {
-      var rect = this.slider.getBoundingClientRect();
-      // The ratio of last resize to real size.
-      var ratio = this.state.upperBound / this._calcUpperBound();
-
       var touch = e.touches[0];
       return [
-        touch['page' + this._axisKey()] * ratio,
-        touch['page' + this._orthogonalAxisKey()] * ratio
+        touch['page' + this._axisKey()],
+        touch['page' + this._orthogonalAxisKey()]
       ];
     },
 
@@ -516,7 +482,6 @@
 
       this.setState(function (prevState) {
         return {
-          startValue: this.state.value[i],
           startPosition: position !== undefined ? position : prevState.startPosition,
           index: i,
           zIndices: zIndices
@@ -544,7 +509,7 @@
     _onMouseMove: function (e) {
       var position = this._getMousePosition(e);
       var diffPosition = this._getDiffPosition(position[0]);
-      var newValue = this._getValueFromPosition(diffPosition);
+      var newValue = this._getValueFromPosition(position[0], diffPosition);
       this._move(newValue, e);
     },
 
@@ -567,7 +532,7 @@
       pauseEvent(e);
 
       var diffPosition = this._getDiffPosition(position[0]);
-      var newValue = this._getValueFromPosition(diffPosition);
+      var newValue = this._getValueFromPosition(position[0], diffPosition);
 
       this._move(newValue, e);
     },
@@ -604,9 +569,13 @@
       this._move(Math.max(newValue, this.props.min));
     },
 
-    _getValueFromPosition: function (position) {
-      var diffValue = position / (this.state.sliderLength - this.state.handleSize) * (this.props.max - this.props.min);
-      return this._trimAlignValue(this.state.startValue + diffValue);
+    _getValueFromPosition: function (currentPosition, diffPosition) {
+      var sliderLength = this._calcSliderLength();
+      var handleSize = this._calcHandleSize();
+
+      var currentValue = this._calcValueFromPosition(currentPosition);
+      var diffValue = this._calcValueFromPosition(diffPosition);
+      return this._trimAlignValue(currentValue);
     },
 
     _getDiffPosition: function (position) {
@@ -659,6 +628,7 @@
           this._trimPreceding(length, value, minDistance, props.min);
         }
       }
+
 
       // Normally you would use `shouldComponentUpdate`, but since the slider is a low-level component,
       // the extra complexity might be worth the extra performance.
@@ -813,7 +783,7 @@
 
     _renderBar: function (i, offsetFrom, offsetTo) {
       var self = this;
-      var upperBound = this.state.upperBound;
+      var upperBound = this._calcUpperBound();
 
       var relFrom = upperBound === 0 ? 0 : (offsetFrom * 100 / upperBound);
       var relTo = upperBound === 0 ? 100 : (100 - offsetTo * 100 / upperBound);
@@ -840,7 +810,7 @@
         bars.push(this._renderBar(i + 1, offset[i], offset[i + 1]));
       }
 
-      bars.push(this._renderBar(lastIndex + 1, offset[lastIndex], this.state.upperBound));
+      bars.push(this._renderBar(lastIndex + 1, offset[lastIndex], this._calcUpperBound()));
 
       return bars;
     },
@@ -852,8 +822,8 @@
         var position = this._getMousePosition(e);
         this._forceValueFromPosition(position[0], function (i) {
           this._start(i, position[0]);
-          this._fireChangeEvent('onChange', e);
           this._addHandlers(this._getMouseEventMap());
+          this._fireChangeEvent('onChange', e);
         }.bind(this));
       }
 
