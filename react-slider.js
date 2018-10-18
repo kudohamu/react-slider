@@ -219,6 +219,10 @@
       };
     },
 
+    componentDidMount: function() {
+      this.setState({ value: this.state.value });
+    },
+
     // Keep the internal `value` consistent with an outside `value` if present.
     // This basically allows the slider to be a controlled component.
     componentWillReceiveProps: function (newProps) {
